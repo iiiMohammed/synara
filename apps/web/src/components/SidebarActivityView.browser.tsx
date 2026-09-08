@@ -76,6 +76,8 @@ function renderActivity(input: {
   onVisibleThreadIdsChange?: (threadIds: readonly ThreadId[]) => void;
   onOpenThread?: (threadId: ThreadId) => void;
   onSetThreadSettled?: (threadId: ThreadId, settled: boolean) => void;
+  onToggleThreadPinned?: (threadId: ThreadId) => void;
+  onArchiveThread?: (threadId: ThreadId) => void;
   onMarkThreadRead?: (threadId: ThreadId, completedAt?: string) => void;
   onRenameThread?: (threadId: ThreadId) => void;
   onThreadRenamePointerUp?: (event: ReactPointerEvent<HTMLElement>, threadId: ThreadId) => void;
@@ -97,8 +99,8 @@ function renderActivity(input: {
       resolveThreadStatus={input.resolveThreadStatus ?? (() => null)}
       onOpenThread={input.onOpenThread ?? (() => {})}
       onSetThreadSettled={input.onSetThreadSettled ?? (() => {})}
-      onToggleThreadPinned={() => {}}
-      onArchiveThread={() => {}}
+      onToggleThreadPinned={input.onToggleThreadPinned ?? (() => {})}
+      onArchiveThread={input.onArchiveThread ?? (() => {})}
       onMarkThreadRead={input.onMarkThreadRead ?? (() => {})}
       onRenameThread={input.onRenameThread ?? (() => {})}
       onThreadRenamePointerUp={input.onThreadRenamePointerUp ?? (() => {})}
@@ -114,6 +116,144 @@ function renderActivity(input: {
 describe("SidebarActivityView", () => {
   afterEach(() => {
     document.body.innerHTML = "";
+  });
+
+  it.runIf(!window.matchMedia("(hover: hover)").matches)(
+    "reveals row actions to a real mouse in a touch-enabled browser",
+    async () => {
+      const thread = makeThread(0, { hasLiveTailWork: true });
+      const mounted = await render(renderActivity({ threads: [thread] }));
+      const row = page.getByTestId(`activity-thread-${thread.id}`);
+      const actionStrip = document.querySelector<HTMLButtonElement>(
+        'button[aria-label="Pin thread"]',
+      )?.parentElement;
+
+      expect(window.matchMedia("(hover: hover)").matches).toBe(false);
+      expect(actionStrip).not.toBeNull();
+      expect(getComputedStyle(actionStrip!).opacity).toBe("0");
+      expect(getComputedStyle(actionStrip!).pointerEvents).toBe("none");
+
+      await row.hover();
+
+      await vi.waitFor(() => {
+        expect(row.element().parentElement?.dataset.pointerHover).toBe("true");
+        expect(getComputedStyle(actionStrip!).opacity).toBe("1");
+        expect(getComputedStyle(actionStrip!).pointerEvents).toBe("auto");
+      });
+      await mounted.unmount();
+    },
+  );
+
+  it("keeps row actions stable across pointer, focus, and touch input", async () => {
+    const thread = makeThread(1, { hasLiveTailWork: true });
+    const mounted = await render(
+      renderActivity({
+        threads: [thread],
+        resolveThreadStatus: () => ({
+          label: "Working",
+          colorClass: "text-sky-600",
+          dotClass: "bg-sky-500",
+          pulse: true,
+        }),
+      }),
+    );
+    const row = page.getByTestId(`activity-thread-${thread.id}`);
+    const rowElement = row.element();
+    const wrapper = rowElement.parentElement;
+    const actionStrip = wrapper?.querySelector<HTMLElement>('[data-slot="activity-row-actions"]');
+    const status = wrapper?.querySelector<HTMLElement>('[data-slot="activity-completion-status"]');
+    const pin = wrapper?.querySelector<HTMLButtonElement>('button[aria-label="Pin thread"]');
+
+    expect(wrapper).not.toBeNull();
+    expect(actionStrip).not.toBeNull();
+    expect(status).not.toBeNull();
+    expect(pin).not.toBeNull();
+    // Browser-mode tests retain the physical mouse position between cases. Move
+    // it off the newly mounted row before asserting the resting state.
+    await page.getByRole("button", { name: "Activity options", exact: true }).hover();
+    await vi.waitFor(() => {
+      expect(wrapper!.dataset.pointerHover).toBeUndefined();
+      expect(getComputedStyle(actionStrip!).opacity).toBe("0");
+      expect(getComputedStyle(actionStrip!).pointerEvents).toBe("none");
+      expect(getComputedStyle(pin!).pointerEvents).toBe("none");
+    });
+
+    wrapper!.dispatchEvent(
+      new PointerEvent("pointerover", { bubbles: true, pointerId: 2, pointerType: "touch" }),
+    );
+    expect(wrapper!.dataset.pointerHover).toBeUndefined();
+
+    await row.hover();
+    await vi.waitFor(() => {
+      expect(wrapper!.dataset.pointerHover).toBe("true");
+      expect(getComputedStyle(actionStrip!).opacity).toBe("1");
+      expect(getComputedStyle(actionStrip!).pointerEvents).toBe("auto");
+      expect(getComputedStyle(pin!).pointerEvents).toBe("auto");
+      expect(getComputedStyle(status!).opacity).toBe("0");
+    });
+
+    wrapper!.dispatchEvent(
+      new PointerEvent("pointerout", { bubbles: true, pointerId: 2, pointerType: "touch" }),
+    );
+    expect(wrapper!.dataset.pointerHover).toBe("true");
+
+    await page.getByRole("button", { name: "Pin thread" }).hover();
+    await page.getByRole("button", { name: "Archive thread" }).hover();
+    await page.getByRole("button", { name: "Done" }).hover();
+    expect(wrapper!.dataset.pointerHover).toBe("true");
+
+    rowElement.focus();
+    await page.getByRole("button", { name: "Activity options", exact: true }).hover();
+    await vi.waitFor(() => {
+      expect(wrapper!.dataset.pointerHover).toBeUndefined();
+      expect(getComputedStyle(actionStrip!).opacity).toBe("1");
+    });
+
+    rowElement.blur();
+    await vi.waitFor(() => {
+      expect(getComputedStyle(actionStrip!).opacity).toBe("0");
+      expect(getComputedStyle(actionStrip!).pointerEvents).toBe("none");
+      expect(getComputedStyle(pin!).pointerEvents).toBe("none");
+      expect(getComputedStyle(status!).opacity).toBe("1");
+    });
+    await mounted.unmount();
+  });
+
+  it("runs each revealed row action without activating or renaming the row", async () => {
+    const thread = makeThread(2, { hasLiveTailWork: true });
+    const onOpenThread = vi.fn();
+    const onToggleThreadPinned = vi.fn();
+    const onArchiveThread = vi.fn();
+    const onSetThreadSettled = vi.fn();
+    const onRenameThread = vi.fn();
+    const onThreadRenamePointerUp = vi.fn();
+    const mounted = await render(
+      renderActivity({
+        threads: [thread],
+        onOpenThread,
+        onToggleThreadPinned,
+        onArchiveThread,
+        onSetThreadSettled,
+        onRenameThread,
+        onThreadRenamePointerUp,
+      }),
+    );
+
+    await page.getByTestId(`activity-thread-${thread.id}`).hover();
+    await page.getByRole("button", { name: "Pin thread" }).click();
+    await page.getByRole("button", { name: "Archive thread" }).click();
+    await page.getByRole("button", { name: "Done" }).click();
+
+    expect(onToggleThreadPinned).toHaveBeenCalledOnce();
+    expect(onToggleThreadPinned).toHaveBeenCalledWith(thread.id);
+    expect(onArchiveThread).toHaveBeenCalledOnce();
+    expect(onArchiveThread).toHaveBeenCalledWith(thread.id);
+    expect(onSetThreadSettled).toHaveBeenCalledOnce();
+    expect(onSetThreadSettled).toHaveBeenCalledWith(thread.id, true);
+    expect(onOpenThread).not.toHaveBeenCalled();
+    expect(onRenameThread).not.toHaveBeenCalled();
+    expect(onThreadRenamePointerUp).not.toHaveBeenCalled();
+    await mounted.unmount();
   });
 
   it("pages project groups, reports only mounted rows, and prefers live PR state", async () => {

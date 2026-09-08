@@ -13,6 +13,7 @@
     "typecheck:legacy": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "test:browser": "vitest run --config vitest.browser.config.ts",
+    "test:browser:hybrid": "vitest run --config vitest.browser.hybrid.config.ts",
     "test:browser:stable": "vitest run --config vitest.browser.stable.config.ts",
     "test:browser:geometry": "vitest run --config vitest.browser.geometry.config.ts",
     "test:electron:e2e": "playwright test --config playwright.electron.config.ts",

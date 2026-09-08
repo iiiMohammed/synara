@@ -28,9 +28,9 @@ import {
 } from "~/lib/icons";
 import { cn } from "~/lib/utils";
 import {
+  SIDEBAR_ACTIVITY_ROW_POINTER_HOVER_CLASS_NAME,
   SIDEBAR_ROW_ACTIVE_CLASS_NAME,
   SIDEBAR_ROW_FOCUS_CLASS_NAME,
-  SIDEBAR_ROW_HOVER_CLASS_NAME,
   SIDEBAR_ROW_LABEL_TEXT_CLASS_NAME,
   SIDEBAR_SECTION_LABEL_CLASS_NAME,
   sidebarHoverRevealHideClassName,
@@ -132,6 +132,7 @@ function ActivityThreadRow({
   onContextMenu: (threadId: ThreadId, position: SidebarRowContextMenuPosition) => void;
   renderHoverCard: (anchorId: string) => ReactNode;
 }) {
+  const [pointerHover, setPointerHover] = useState(false);
   const provider = thread.session?.provider ?? thread.modelSelection.provider;
   const branch = resolveThreadDisplayBranch(thread);
   const isWorktree =
@@ -158,6 +159,11 @@ function ActivityThreadRow({
     onRenamePointerUp,
     onContextMenu,
   });
+  const updatePointerHover = (event: ReactPointerEvent<HTMLElement>, hovering: boolean) => {
+    if (event.pointerType !== "touch") {
+      setPointerHover(hovering);
+    }
+  };
 
   return (
     <Tooltip>
@@ -167,8 +173,12 @@ function ActivityThreadRow({
           <div
             data-thread-hover-anchor={hoverAnchorId}
             className="group/activity-row relative"
+            data-pointer-hover={pointerHover ? "true" : undefined}
             data-thread-item
             {...rowGestures}
+            onPointerEnter={(event) => updatePointerHover(event, true)}
+            onPointerLeave={(event) => updatePointerHover(event, false)}
+            onPointerCancel={(event) => updatePointerHover(event, false)}
           />
         }
       >
@@ -179,15 +189,18 @@ function ActivityThreadRow({
           className={cn(
             "flex w-full min-w-0 cursor-pointer flex-col gap-1 rounded-lg px-2.5 py-2 text-left select-none",
             SIDEBAR_ROW_FOCUS_CLASS_NAME,
-            isActive ? SIDEBAR_ROW_ACTIVE_CLASS_NAME : SIDEBAR_ROW_HOVER_CLASS_NAME,
-            isSettled && "opacity-55 transition-opacity hover:opacity-85",
+            isActive
+              ? SIDEBAR_ROW_ACTIVE_CLASS_NAME
+              : SIDEBAR_ACTIVITY_ROW_POINTER_HOVER_CLASS_NAME,
+            isSettled &&
+              "opacity-55 transition-opacity group-data-[pointer-hover=true]/activity-row:opacity-85",
           )}
         >
           <span
             className={cn(
               "flex min-w-0 items-center gap-1.5 overflow-hidden pr-5 transition-[padding] duration-150 ease-out",
               // Yield the title row to the hover action cluster (pin + archive + done).
-              "group-hover/activity-row:pr-[4.25rem] group-focus-within/activity-row:pr-[4.25rem]",
+              "group-data-[pointer-hover=true]/activity-row:pr-[4.25rem] group-focus-within/activity-row:pr-[4.25rem]",
             )}
           >
             <ProviderIcon
@@ -237,7 +250,8 @@ function ActivityThreadRow({
           </span>
         ) : null}
         <span
-          className="absolute top-1 right-1 inline-flex items-center gap-1 opacity-0 transition-opacity group-hover/activity-row:opacity-100 group-focus-within/activity-row:opacity-100"
+          data-slot="activity-row-actions"
+          className="pointer-events-none absolute top-1 right-1 inline-flex items-center gap-1 opacity-0 transition-opacity [&_button]:pointer-events-none group-data-[pointer-hover=true]/activity-row:pointer-events-auto group-data-[pointer-hover=true]/activity-row:opacity-100 group-data-[pointer-hover=true]/activity-row:[&_button]:pointer-events-auto group-focus-within/activity-row:pointer-events-auto group-focus-within/activity-row:opacity-100 group-focus-within/activity-row:[&_button]:pointer-events-auto"
           // Double-clicking an action button toggles it twice; it must not also open
           // the row's rename dialog. Pointer-up is the touch/pen double-tap signal,
           // so keep action taps out of that detector too.

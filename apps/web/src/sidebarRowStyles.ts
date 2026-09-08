@@ -21,6 +21,10 @@ export const SIDEBAR_ROW_FOCUS_CLASS_NAME =
 export const SIDEBAR_ROW_HOVER_CLASS_NAME =
   "hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)]";
 
+/** Pointer-driven hover styling for Activity rows on hybrid touch + mouse devices. */
+export const SIDEBAR_ACTIVITY_ROW_POINTER_HOVER_CLASS_NAME =
+  "group-data-[pointer-hover=true]/activity-row:bg-[var(--sidebar-accent)] group-data-[pointer-hover=true]/activity-row:text-[var(--sidebar-accent-foreground)]";
+
 export const SIDEBAR_ROW_ACTIVE_CLASS_NAME =
   "bg-[var(--sidebar-accent-active)] text-[var(--sidebar-accent-foreground)] hover:bg-[var(--sidebar-accent-active)] hover:text-[var(--sidebar-accent-foreground)]";
 
@@ -86,7 +90,7 @@ export type SidebarHoverRevealGroup = "activity-row" | "project-header" | "threa
  */
 const SIDEBAR_HOVER_REVEAL_HIDE_CLASS_NAME: Record<SidebarHoverRevealGroup, string> = {
   "activity-row":
-    "transition-opacity group-hover/activity-row:pointer-events-none group-hover/activity-row:opacity-0 group-focus-within/activity-row:pointer-events-none group-focus-within/activity-row:opacity-0",
+    "transition-opacity group-data-[pointer-hover=true]/activity-row:pointer-events-none group-data-[pointer-hover=true]/activity-row:opacity-0 group-focus-within/activity-row:pointer-events-none group-focus-within/activity-row:opacity-0",
   "project-header":
     "transition-opacity group-hover/project-header:pointer-events-none group-hover/project-header:opacity-0 group-has-[:focus-visible]/project-header:pointer-events-none group-has-[:focus-visible]/project-header:opacity-0",
   "thread-row":

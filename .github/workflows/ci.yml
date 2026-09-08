@@ -1,5 +1,5 @@
 # Lane rule: static-fast is fast checks with no special runtime, static-typecheck is tsc,
-# unit is bun test per package, browser owns Playwright (stable only, sharded) and is the long pole,
+# unit is Vitest via bun run per package, browser owns Playwright (stable sharded + focused hybrid) and is the long pole,
 # build owns Electron and desktop output. Geometry quarantine lives in ci-nightly.yml.
 # Gate (quality) aggregates only: add no run steps there. A new fast check with no runtime goes to static-fast.
 # Setup-workspace runs once per lane, not once for all: never put checks in the shared action.
@@ -193,6 +193,13 @@ jobs:
       - name: Browser test (stable shard ${{ matrix.shard }}/3)
         timeout-minutes: 20
         run: bun run --cwd apps/web test:browser:stable -- --shard=${{ matrix.shard }}/3
+
+      # The touch-enabled Chromium context reproduces hybrid Windows devices.
+      # Run the focused Activity suite once rather than duplicating it per shard.
+      - name: Browser test (hybrid touch + mouse)
+        if: matrix.shard == 1
+        timeout-minutes: 5
+        run: bun run --cwd apps/web test:browser:hybrid
 
   build:
     name: Desktop Build
