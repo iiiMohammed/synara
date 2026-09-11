@@ -1173,6 +1173,26 @@ const ThreadHandoffCreateCommand = Schema.Struct({
   createdAt: IsoDateTime,
 });
 
+const ThreadProviderHandoffCommand = Schema.Struct({
+  type: Schema.Literal("thread.provider.handoff"),
+  commandId: CommandId,
+  threadId: ThreadId,
+  expectedSourceProvider: ProviderKind,
+  targetModelSelection: ModelSelection,
+  createdAt: IsoDateTime,
+});
+
+const ThreadProviderHandoffCompleteCommand = Schema.Struct({
+  type: Schema.Literal("thread.provider.handoff.complete"),
+  commandId: CommandId,
+  threadId: ThreadId,
+  handoffCommandId: CommandId,
+  handoffEventId: EventId,
+  sourceModelSelection: ModelSelection,
+  targetModelSelection: ModelSelection,
+  createdAt: IsoDateTime,
+});
+
 const ThreadForkCreateCommand = Schema.Struct({
   type: Schema.Literal("thread.fork.create"),
   commandId: CommandId,
@@ -1489,6 +1509,7 @@ const DispatchableClientOrchestrationCommand = Schema.Union([
   ProjectDeleteCommand,
   ThreadCreateCommand,
   ThreadHandoffCreateCommand,
+  ThreadProviderHandoffCommand,
   ThreadForkCreateCommand,
   ThreadDeleteCommand,
   ThreadArchiveCommand,
@@ -1525,6 +1546,7 @@ export const ClientOrchestrationCommand = Schema.Union([
   ProjectDeleteCommand,
   ThreadCreateCommand,
   ThreadHandoffCreateCommand,
+  ThreadProviderHandoffCommand,
   ThreadForkCreateCommand,
   ThreadDeleteCommand,
   ThreadArchiveCommand,
@@ -1661,6 +1683,7 @@ const ThreadSidechatExpireCommand = Schema.Struct({
 
 const InternalOrchestrationCommand = Schema.Union([
   ThreadSessionSetCommand,
+  ThreadProviderHandoffCompleteCommand,
   ThreadGoalContinueCommand,
   ThreadMessagesImportCommand,
   ThreadMessageAssistantDeltaCommand,
@@ -1717,6 +1740,7 @@ export const OrchestrationEventType = Schema.Literals([
   "thread.conversation-rollback-requested",
   "thread.conversation-rolled-back",
   "thread.message-edit-resend-requested",
+  "thread.provider-handoff-requested",
   "thread.session-stop-requested",
   "thread.session-set",
   "thread.proposed-plan-upserted",
@@ -2080,6 +2104,13 @@ export const ThreadSessionStopRequestedPayload = Schema.Struct({
   createdAt: IsoDateTime,
 });
 
+export const ThreadProviderHandoffRequestedPayload = Schema.Struct({
+  threadId: ThreadId,
+  sourceModelSelection: ModelSelection,
+  targetModelSelection: ModelSelection,
+  createdAt: IsoDateTime,
+});
+
 export const ThreadSessionSetPayload = Schema.Struct({
   threadId: ThreadId,
   session: OrchestrationSession,
@@ -2288,6 +2319,11 @@ export const OrchestrationEvent = Schema.Union([
     ...EventBaseFields,
     type: Schema.Literal("thread.message-edit-resend-requested"),
     payload: ThreadMessageEditResendRequestedPayload,
+  }),
+  Schema.Struct({
+    ...EventBaseFields,
+    type: Schema.Literal("thread.provider-handoff-requested"),
+    payload: ThreadProviderHandoffRequestedPayload,
   }),
   Schema.Struct({
     ...EventBaseFields,
