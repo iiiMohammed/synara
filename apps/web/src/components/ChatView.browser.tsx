@@ -4009,9 +4009,19 @@ describe("ChatView transcript geometry (full app)", () => {
             .querySelectorAll("p, li")
             [anchorIndex]!.getBoundingClientRect().top;
         const detachedTop = readAnchorTop();
+        const expectAnchorToHold = () =>
+          vi.waitFor(
+            () => {
+              expect(readAnchorTop()).toBeCloseTo(detachedTop, 0);
+            },
+            { timeout: 2_000, interval: 16 },
+          );
         for (let index = 0; index < 3; index += 1) {
           grow();
           await waitForLayout();
+          // Streaming growth can outpace one layout pass on slower machines;
+          // let the list's scroll compensation settle before the next growth.
+          await expectAnchorToHold();
         }
         if (keyboardKey !== null || action === "find") {
           syncThread((thread) => ({
@@ -4034,7 +4044,7 @@ describe("ChatView transcript geometry (full app)", () => {
         }
         // The list may compensate scrollTop as estimated rows settle. The text
         // the reader is looking at must remain at the same viewport position.
-        expect(readAnchorTop()).toBeCloseTo(detachedTop, 0);
+        await expectAnchorToHold();
         if (action === "thread switch") {
           await mounted.router.navigate({
             to: "/$threadId",
