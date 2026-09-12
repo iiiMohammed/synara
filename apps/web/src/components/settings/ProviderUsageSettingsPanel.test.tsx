@@ -27,7 +27,6 @@ function claudeSnapshot(
       { window: "Fable", usedPercent: 89, windowDurationMins: 10080 },
       { window: "Sonnet", usedPercent: 20, windowDurationMins: 10080 },
       { window: "Opus", usedPercent: 10, windowDurationMins: 10080 },
-      { window: "Weekly (overage)", usedPercent: 90, windowDurationMins: 10080 },
     ],
     usageLines: [{ label: "Extra usage", value: "$5.00 of $100.00" }],
     source: "test",
@@ -60,9 +59,7 @@ describe("ProviderUsageSettingsPanel", () => {
     expect(markup).toContain("Fable");
     expect(markup).toContain("Sonnet");
     expect(markup).toContain("Opus");
-    expect(markup).toContain("Weekly (overage)");
     expect(markup).toContain("11% left");
-    expect(markup).toContain("10% left");
     expect(markup).toContain("Extra usage");
   });
 

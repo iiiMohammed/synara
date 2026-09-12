@@ -229,7 +229,7 @@ describe("RateLimitsPanel helpers", () => {
     ]);
   });
 
-  it("keeps the claude seven_day_overage_included window independent from Fable and Weekly", () => {
+  it("maps Claude's overage-included weekly telemetry to the Fable sublimit", () => {
     const rateLimits = deriveAccountRateLimits([
       {
         activities: [
@@ -250,8 +250,8 @@ describe("RateLimitsPanel helpers", () => {
 
     expect(rows).toEqual([
       {
-        id: "claudeAgent-Weekly (overage)",
-        label: "Weekly (overage)",
+        id: "claudeAgent-Fable",
+        label: "Fable",
         remainingPercent: 22,
         resetsAt: "2099-04-04T08:03:00.000Z",
         windowDurationMins: 10080,

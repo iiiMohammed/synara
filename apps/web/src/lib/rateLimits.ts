@@ -46,7 +46,6 @@ const WINDOW_ORDER = new Map([
   ["Fable", 3],
   ["Sonnet", 4],
   ["Opus", 5],
-  ["Weekly (overage)", 6],
   ["Usage credits", 20],
   ["Current", 30],
 ]);
@@ -104,7 +103,6 @@ const WINDOW_DURATION_MINS = new Map<string, number>([
   ["Fable", 7 * 24 * 60],
   ["Sonnet", 7 * 24 * 60],
   ["Opus", 7 * 24 * 60],
-  ["Weekly (overage)", 7 * 24 * 60],
 ]);
 
 export function windowDurationMinsForWindowLabel(label: string | undefined): number | undefined {
@@ -132,12 +130,13 @@ const WINDOW_LABEL_ALIASES = new Map<string, string>([
   ["opus", "Opus"],
   ["seven_day_opus", "Opus"],
   ["weekly_opus", "Opus"],
-  // Claude Code reports its included overage allowance as `*_overage_included`. Its model
-  // scope is not proven, so it stays an independent window here; paid overage stays separate.
-  ["seven_day_overage_included", "Weekly (overage)"],
-  ["weekly_overage_included", "Weekly (overage)"],
-  ["weekly_overage", "Weekly (overage)"],
-  ["weekly_(overage)", "Weekly (overage)"],
+  // Claude Code calls `seven_day_overage_included` the Fable limit: a per-model weekly
+  // sublimit, so it has to merge with the Fable row instead of standing up a duplicate
+  // window that a stale snapshot could keep alive. Paid overage stays `Usage credits`.
+  ["seven_day_overage_included", "Fable"],
+  ["weekly_overage_included", "Fable"],
+  ["weekly_overage", "Fable"],
+  ["weekly_(overage)", "Fable"],
   ["overage", "Usage credits"],
   ["usage_credits", "Usage credits"],
 ]);

@@ -38,9 +38,11 @@ describe("normalizeRateLimitLabel", () => {
     expect(normalizeRateLimitLabel("", 300)).toBe("5h");
   });
 
-  it("keeps the included overage window independent and paid overage as usage credits", () => {
-    expect(normalizeRateLimitLabel("seven_day_overage_included", 10080)).toBe("Weekly (overage)");
-    expect(normalizeRateLimitLabel("Weekly (overage)", 10080)).toBe("Weekly (overage)");
+  it("maps the overage-included weekly window to Fable and paid overage to usage credits", () => {
+    expect(normalizeRateLimitLabel("seven_day_overage_included", 10080)).toBe("Fable");
+    expect(normalizeRateLimitLabel("weekly_overage_included", 10080)).toBe("Fable");
+    expect(normalizeRateLimitLabel("weekly_overage", 10080)).toBe("Fable");
+    expect(normalizeRateLimitLabel("weekly_(overage)", 10080)).toBe("Fable");
     expect(normalizeRateLimitLabel("overage", 10080)).toBe("Usage credits");
     expect(normalizeRateLimitLabel("usage_credits", 10080)).toBe("Usage credits");
   });
@@ -52,7 +54,7 @@ describe("normalizeRateLimitLabel", () => {
     );
     expect(
       normalizeRateLimitLabel(normalizeRateLimitLabel("seven_day_overage_included", 10080), 10080),
-    ).toBe("Weekly (overage)");
+    ).toBe("Fable");
   });
 });
 
@@ -63,7 +65,6 @@ describe("windowDurationMinsForWindowLabel", () => {
     expect(windowDurationMinsForWindowLabel("Fable")).toBe(10080);
     expect(windowDurationMinsForWindowLabel("Sonnet")).toBe(10080);
     expect(windowDurationMinsForWindowLabel("Opus")).toBe(10080);
-    expect(windowDurationMinsForWindowLabel("Weekly (overage)")).toBe(10080);
   });
 
   it("has no default duration for credits or unmapped labels", () => {
@@ -82,7 +83,6 @@ describe("formatRateLimitDisplayLabel", () => {
   it("leaves model and canonical labels untouched", () => {
     expect(formatRateLimitDisplayLabel("Opus 4.5")).toBe("Opus 4.5");
     expect(formatRateLimitDisplayLabel("Usage credits")).toBe("Usage credits");
-    expect(formatRateLimitDisplayLabel("Weekly (overage)")).toBe("Weekly (overage)");
     expect(formatRateLimitDisplayLabel("monthly")).toBe("monthly");
   });
 });

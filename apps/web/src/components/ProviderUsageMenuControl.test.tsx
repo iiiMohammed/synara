@@ -20,7 +20,7 @@ const rateLimits: ReadonlyArray<ProviderRateLimit> = [
       { window: "Fable", usedPercent: 89, windowDurationMins: 10080 },
       { window: "Sonnet", usedPercent: 20, windowDurationMins: 10080 },
       { window: "Opus", usedPercent: 10, windowDurationMins: 10080 },
-      { window: "Weekly (overage)", usedPercent: 90, windowDurationMins: 10080 },
+      { window: "seven_day_overage_included", usedPercent: 90, windowDurationMins: 10080 },
       { window: "Usage credits", usedPercent: 80 },
     ],
   },
@@ -51,10 +51,9 @@ describe("buildProviderUsageMenuModel", () => {
       "Fable",
       "Sonnet",
       "Opus",
-      "Weekly (overage)",
       "Usage credits",
     ]);
-    expect(model.primaryRow?.displayLabel).toBe("Weekly (overage)");
+    expect(model.primaryRow?.displayLabel).toBe("Fable");
     expect(model.primaryRow?.remainingLabel).toBe("10%");
   });
 
@@ -82,9 +81,7 @@ describe("ProviderUsagePanelContent", () => {
 
     expect(markup).toContain("Fable");
     expect(markup).toContain("Sonnet");
-    expect(markup).toContain("Weekly (overage)");
     expect(markup).toContain("Usage credits");
-    expect(markup).toContain("11% left");
     expect(markup).toContain("10% left");
   });
 });

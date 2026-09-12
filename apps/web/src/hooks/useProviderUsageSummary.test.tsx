@@ -140,14 +140,18 @@ describe("useProviderUsageSummary", () => {
     ]);
   });
 
-  it.each(["2099-04-08T18:05:00.000Z", "2099-04-08T17:55:00.000Z"])(
-    "keeps overage telemetry independent from live Weekly and Fable at %s",
-    (updatedAt) => {
+  it.each([
+    ["2099-04-08T18:05:00.000Z", 10],
+    ["2099-04-08T17:55:00.000Z", 11],
+  ])(
+    "merges Fable telemetry at %s without replacing the weekly allowance",
+    (updatedAt, remaining) => {
       const queryClient = createQueryClient();
       queryClient.setQueryData(serverQueryKeys.allProviderUsage(), [
         snapshot({
           updatedAt: "2099-04-08T18:00:00.000Z",
           limits: [
+            { window: "5h", usedPercent: 0, windowDurationMins: 300 },
             { window: "Weekly", usedPercent: 45, windowDurationMins: 10080 },
             { window: "Fable", usedPercent: 89, windowDurationMins: 10080 },
           ],
@@ -171,9 +175,9 @@ describe("useProviderUsageSummary", () => {
           remainingPercent,
         })),
       ).toEqual([
+        { label: "5h", remainingPercent: 100 },
         { label: "Weekly", remainingPercent: 55 },
-        { label: "Fable", remainingPercent: 11 },
-        { label: "Weekly (overage)", remainingPercent: 10 },
+        { label: "Fable", remainingPercent: remaining },
       ]);
     },
   );
