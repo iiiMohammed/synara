@@ -140,6 +140,33 @@ describe("useProviderUsageSummary", () => {
     ]);
   });
 
+  it("accepts precomputed thread fallback rows from aggregate provider surfaces", () => {
+    const queryClient = createQueryClient();
+    queryClient.setQueryData(serverQueryKeys.allProviderUsage(), []);
+
+    const summary = readProviderUsageSummary({
+      queryClient,
+      threadRateLimits: [
+        {
+          provider: "claudeAgent",
+          updatedAt: "2026-06-09T12:00:00.000Z",
+          limits: [
+            {
+              window: "5h",
+              usedPercent: 12,
+              resetsAt: "2026-06-09T17:00:00.000Z",
+              windowDurationMins: 300,
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(summary.rateLimits).toHaveLength(1);
+    expect(summary.rateLimits[0]?.limits?.[0]?.window).toBe("5h");
+    expect(summary.rateLimits[0]?.limits?.[0]?.usedPercent).toBe(12);
+  });
+
   it.each([
     ["2099-04-08T18:05:00.000Z", 10],
     ["2099-04-08T17:55:00.000Z", 11],
@@ -181,33 +208,6 @@ describe("useProviderUsageSummary", () => {
       ]);
     },
   );
-
-  it("accepts precomputed thread fallback rows from aggregate provider surfaces", () => {
-    const queryClient = createQueryClient();
-    queryClient.setQueryData(serverQueryKeys.allProviderUsage(), []);
-
-    const summary = readProviderUsageSummary({
-      queryClient,
-      threadRateLimits: [
-        {
-          provider: "claudeAgent",
-          updatedAt: "2026-06-09T12:00:00.000Z",
-          limits: [
-            {
-              window: "5h",
-              usedPercent: 12,
-              resetsAt: "2026-06-09T17:00:00.000Z",
-              windowDurationMins: 300,
-            },
-          ],
-        },
-      ],
-    });
-
-    expect(summary.rateLimits).toHaveLength(1);
-    expect(summary.rateLimits[0]?.limits?.[0]?.window).toBe("5h");
-    expect(summary.rateLimits[0]?.limits?.[0]?.usedPercent).toBe(12);
-  });
 
   it("surfaces the throttle notice from an ok snapshot that carries a detail", () => {
     const queryClient = createQueryClient();

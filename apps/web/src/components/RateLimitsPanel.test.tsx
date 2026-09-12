@@ -259,7 +259,7 @@ describe("RateLimitsPanel helpers", () => {
     ]);
   });
 
-  it("keeps paid usage credits separate from the included weekly window", () => {
+  it("keeps paid usage credits separate from Fable's included weekly allowance", () => {
     const rateLimits = deriveAccountRateLimits([
       {
         activities: [
@@ -280,7 +280,7 @@ describe("RateLimitsPanel helpers", () => {
     ]);
   });
 
-  it("preserves model-specific weekly windows that share the same duration", () => {
+  it("preserves model-specific weekly windows with the same duration", () => {
     const rows = deriveVisibleRateLimitRows([
       {
         provider: "claudeAgent",
