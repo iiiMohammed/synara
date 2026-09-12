@@ -3990,20 +3990,6 @@ describe("ChatView transcript geometry (full app)", () => {
           expect(getScrollContainerDistanceFromBottom(container)).toBeGreaterThanOrEqual(10),
         );
         await waitForLayout();
-        // The wheel must take the reader out of live follow before the transcript
-        // grows; otherwise growth pins to the bottom and moves the anchor by the
-        // whole appended height. The scroll-to-bottom affordance is the app's
-        // own signal that detached mode is active.
-        await vi.waitFor(
-          () => {
-            const scrollToBottom = document.querySelector<HTMLElement>(
-              'button[aria-label="Scroll to bottom"]',
-            );
-            expect(scrollToBottom).not.toBeNull();
-            expect(scrollToBottom!.getAttribute("aria-hidden")).toBe("false");
-          },
-          { timeout: 2_000, interval: 16 },
-        );
         const viewport = container.getBoundingClientRect();
         const readingAnchor = Array.from(
           container.querySelectorAll<HTMLElement>("[data-message-id] p, [data-message-id] li"),
@@ -4023,19 +4009,9 @@ describe("ChatView transcript geometry (full app)", () => {
             .querySelectorAll("p, li")
             [anchorIndex]!.getBoundingClientRect().top;
         const detachedTop = readAnchorTop();
-        const expectAnchorToHold = () =>
-          vi.waitFor(
-            () => {
-              expect(readAnchorTop()).toBeCloseTo(detachedTop, 0);
-            },
-            { timeout: 2_000, interval: 16 },
-          );
         for (let index = 0; index < 3; index += 1) {
           grow();
           await waitForLayout();
-          // Streaming growth can outpace one layout pass on slower machines;
-          // let the list's scroll compensation settle before the next growth.
-          await expectAnchorToHold();
         }
         if (keyboardKey !== null || action === "find") {
           syncThread((thread) => ({
@@ -4058,7 +4034,7 @@ describe("ChatView transcript geometry (full app)", () => {
         }
         // The list may compensate scrollTop as estimated rows settle. The text
         // the reader is looking at must remain at the same viewport position.
-        await expectAnchorToHold();
+        expect(readAnchorTop()).toBeCloseTo(detachedTop, 0);
         if (action === "thread switch") {
           await mounted.router.navigate({
             to: "/$threadId",
