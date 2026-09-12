@@ -3990,6 +3990,20 @@ describe("ChatView transcript geometry (full app)", () => {
           expect(getScrollContainerDistanceFromBottom(container)).toBeGreaterThanOrEqual(10),
         );
         await waitForLayout();
+        // The wheel must take the reader out of live follow before the transcript
+        // grows; otherwise growth pins to the bottom and moves the anchor by the
+        // whole appended height. The scroll-to-bottom affordance is the app's
+        // own signal that detached mode is active.
+        await vi.waitFor(
+          () => {
+            const scrollToBottom = document.querySelector<HTMLElement>(
+              'button[aria-label="Scroll to bottom"]',
+            );
+            expect(scrollToBottom).not.toBeNull();
+            expect(scrollToBottom!.getAttribute("aria-hidden")).toBe("false");
+          },
+          { timeout: 2_000, interval: 16 },
+        );
         const viewport = container.getBoundingClientRect();
         const readingAnchor = Array.from(
           container.querySelectorAll<HTMLElement>("[data-message-id] p, [data-message-id] li"),
